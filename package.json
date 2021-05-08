@@ -1,0 +1,42 @@
+{
+  "name": "ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126",
+  "version": "1.0.0",
+  "description": "En esta práctica tendrá que partir de la implementación de la aplicación de procesamiento de notas de texto que llevó a cabo en la Práctica 8 para escribir un servidor y un cliente haciendo uso de los sockets proporcionados por el módulo net de Node.js.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "coverage": "nyc npm test && nyc report --reporter=lcov",
+    "start": "tsc-watch --onSuccess \"node dist/client.js\"",
+    "doc": "typedoc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/issues"
+  },
+  "homepage": "https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126#readme",
+  "dependencies": {
+    "@types/chai": "^4.2.15",
+    "@types/mocha": "^8.2.1",
+    "@types/node": "^14.14.43",
+    "@types/yargs": "^16.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.15.2",
+    "@typescript-eslint/parser": "^4.15.2",
+    "chai": "^4.3.0",
+    "chalk": "^4.1.1",
+    "eslint": "^7.21.0",
+    "eslint-config-google": "^0.14.0",
+    "mocha": "^8.3.0",
+    "nyc": "^15.1.0",
+    "ts-node": "^9.1.1",
+    "tsc-watch": "^4.2.9",
+    "typedoc": "^0.20.36",
+    "typescript": "^4.2.4",
+    "yargs": "^16.2.0"
+  }
+}
