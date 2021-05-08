@@ -904,3 +904,12 @@ En lo referente a la conclusión de la práctica, puedo destacar en primer lugar
 A su vez el poder crear nuestros propios eventos gracias a `events`, te puede permitir una gran variedad de posibilidades, en nuestro caso, la empleamos para que no sea necesario que el cliente envie un evento end para indicar que acabó de transmitir datos, ya que dicho evento end, terminaría la transmisión.
 
 Finalmente, en mi opinión, estas herramientas son muy útiles, por lo que las emplearía en mis proyectos de **TypeScript** siempre que mi proyecto sea enfocado a intercambiar cualquier flujo de datos entre distintos usuarios.
+
+## 6. Bibliografía
+
+* [Guión práctica 10](https://ull-esit-inf-dsi-2021.github.io/prct10-async-sockets/)
+* [Apuntes de sockets de la asignatura](https://ull-esit-inf-dsi-2021.github.io/nodejs-theory/nodejs-sockets.html)
+* [Documentación del paquete yargs](https://www.npmjs.com/package/yargs)
+* [Documentación del paquete chalk](https://www.npmjs.com/package/chalk)
+* [Módulo net de Node.js](https://nodejs.org/dist/latest-v16.x/docs/api/net.html)
+* [Clase EventEmitter del módulo Events de Node.js](https://nodejs.org/dist/latest-v16.x/docs/api/events.html#events_class_eventemitter)
