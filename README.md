@@ -8,6 +8,8 @@
   <a href="https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/actions/workflows/.coveralls.yml">
     <img alt="Coveralls" src="https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/actions/workflows/.coveralls.yml/badge.svg">
   </a>
+    <a href='https://coveralls.io/github/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126?branch=main'><img src='https://coveralls.io/repos/github/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/badge.svg?branch=main' alt='Coverage Status' />
+  </a>
   <a href="https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/actions/workflows/sonarcloud.yml">
     <img alt="Sonar Cloud" src="https://github.com/ULL-ESIT-INF-DSI-2021/ull-esit-inf-dsi-20-21-prct10-async-sockets-alu0101216126/actions/workflows/sonarcloud.yml/badge.svg">
   </a>
