@@ -135,11 +135,10 @@ yargs.command( {
       demandOption: true,
       type: 'string',
     },
-
     title: {
       describe: 'Notes\' title',
-      demandOption: true,
       type: 'string',
+      demandOption: true,
     },
   },
   handler(argv) {
@@ -199,7 +198,7 @@ yargs.command({
   },
   handler(argv) {
     // Type check
-    if (typeof argv.user === 'string' && typeof argv.title === 'string') {
+    if (typeof argv.title === 'string' && typeof argv.user === 'string') {
       requestNote = {
         type: 'read',
         user: argv.user,

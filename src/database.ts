@@ -8,7 +8,8 @@ export class Database {
   /**
    * Default constructor
    */
-  constructor() {}
+  constructor() {
+  }
 
   /**
   * Add a user note in .json format, to our database
@@ -58,7 +59,7 @@ export class Database {
 
     // If the user doesn't exist
     return false;
-  };
+  }
 
   /**
    * Remove a user note in .json format, in our database

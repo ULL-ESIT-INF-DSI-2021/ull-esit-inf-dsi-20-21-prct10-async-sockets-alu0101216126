@@ -3,7 +3,7 @@
 /**
  * @enum colors Possible colors
  */
-export enum colors {Red = "red", Green = "green", Blue = "blue", Yellow = "yellow"};
+export enum colors {Red = "red", Green = "green", Blue = "blue", Yellow = "yellow"}
 
 /**
  * Notes class which stores the data of a note
