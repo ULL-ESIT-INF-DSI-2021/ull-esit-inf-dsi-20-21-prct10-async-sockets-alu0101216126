@@ -66,6 +66,27 @@ Los requisitos que debe cumplir la aplicación de procesamiento de notas de text
 
 ### 4.2 Implementación
 
+- **Código types.ts:**
+
+```ts
+import {Notes, colors} from './notes';
+export type RequestType = {
+    type: 'add' | 'modify' | 'remove' | 'read' | 'list' ;
+    user: string;
+    title?: string;
+    body?: string;
+    color?: colors;
+  }
+
+export type ResponseType = {
+    type: 'add' | 'modify' | 'remove' | 'read' | 'list';
+    success: boolean;
+    notes?: Notes[];
+  }
+```
+
+En este fichero definimos los tipos para las aplicaciones clientes y servidor en formato JSON, de nuestra aplicación. `RequestType` se empleará en el cliente, y `ResponseType` en el servidor
+
 - **Código notes.ts:**
 
 ```ts
@@ -653,3 +674,227 @@ client.on('error', (err) => {
   console.log(`Connection could not be established: ${err.message}`);
 });
 ```
+
+En este fichero emplearemos el módulo `net` y la clase creada previamente `MessageEventEmitterClient`. Lo que haremos será crear un socket cliente, donde se establece la conexión en el puerto 60300 TCP mediante la función `connect`. A su vez creamos un objeto para emitir eventos, a partir de ese socket cliente que creamos, esto es gracias a la clase creada `MessageEventEmitterClient`.
+
+Una vez realizado esto, creamos un objeto en formato JSON, de tipo `RequestType`, dicho objeto será procesado en el comando de `write`. Los valores de dicho RequestType, lo procesaremos dentro del comando yargs correspondiente según como se haya ejecutado el código. Después de haber procesado la entrada, mediante write, enviamos el JSON creado previamente al servidor a través del socket del cliente.
+
+Con el objeto de la clase MessageEventEmitterClient, cuando recibimos un evento `message`, procesamos la respuesta del servidor y mostramos al usuario la información correspondiente a la acción que se quería realizar.
+
+Finalmente, también manejamos un evento en caso de que ocurra un error poder notificarlo, este evento es el `error`.
+
+- **Test eventEmitterClient.spec.ts:**
+
+```ts
+import 'mocha';
+import {expect} from 'chai';
+import {EventEmitter} from 'events';
+import {MessageEventEmitterClient} from '../src/eventEmitterClient';
+
+describe('MessageEventEmitterClient', () => {
+  it('Should emit a message event once it gets a complete message', (done) => {
+    const emitter = new EventEmitter();
+    const client = new MessageEventEmitterClient(emitter);
+
+    client.on('message', (message) => {
+      expect(message).to.be.eql({"title": "Red note ", "body": "This is a red note overwrited", "color": "red"});
+      done();
+    });
+
+    emitter.emit('data', '{"title": "Red note ", "body": "This is a red note overwrited"');
+    emitter.emit('data', ', "color": "red"}');
+    emitter.emit('end');
+  });
+});
+```
+ 
+Como se puede observar, realizamos pruebas para las siguientes situaciones:
+* Enviar un mensaje por partes mediante el evento **data**.
+* Recibir correctamente dicho mensaje mediante el evento **message**
+
+Lo primero que hacemos dentro de la prueba es declarar un objeto `EventEmitter` apuntado por emitter, que utilizaremos para emular el socket por el cual el servidor envía mensajes, posiblemente, en trozos, gracias a la emisión de diferentes eventos de tipo data. Además, también definimos un objeto `MessageEventEmitterClient` apuntado por client, cuyo constructor recibe como argumento al objeto EventEmitter apuntado por emitter.
+
+A continuación, registramos un manejador para el evento message de nuestro objeto `MessageEventEmitterClient` (emiiter). Es importante recordar que este manejador se disparará cuando dicho objeto reciba un mensaje completo a través del socket emulado.
+
+El manejador incluye una invocación a la función expect de chai, consistente en comprobar que el objeto JSON emitido junto al evento de tipo message por nuestro objeto MessageEventEmitterClient coincide realmente con lo esperado, teniendo en cuenta el mensaje enviado posiblemente a trozos, enviado a través del socket emulado. Dado que nuestro código es asíncrono, también es importante invocar al manejador o callback `done` que proporciona mocha para indicar que la prueba ha finalizado. Obsérvese que es un parámetro del manejador pasado a la función `it`.
+
+Las 3 útimas líneas, emiten dos eventos de tipo `data` y uno de tipò `end`, cada uno de los de tipo data llevan trozo del mensaje. Hasta que nuestro objeto MessageEventEmitterClient no reciba el evento end por parte de emitter (El cual actúa de servidor) y, además, el mensaje recibido se pueda transformar a un objeto JSON válido, no emitirá un evento de tipo `message`.
+
+- **Código eventEmitterServer.ts:**
+
+```ts
+import {EventEmitter} from 'events';
+
+/**
+ * @class Class to complement the functionality of the server, this class inherits from the EventEmitter class of the events module
+ */
+export class MessageEventEmitterServer extends EventEmitter {
+  /**
+   * We initialize attributes. After that we process the 'data' event
+   * and, we emit a 'request' event
+   * @param connection EventEmitter type parameter, we will use this attribute to process and emit events
+   */
+  constructor(connection: EventEmitter) {
+    super();
+    let wholeData = '';
+
+    // We get the message through the data event
+    connection.on('data', (dataChunk) => {
+      wholeData += dataChunk;
+
+      let messageLimit = wholeData.indexOf('\n');
+      while (messageLimit !== -1) {
+        const message = wholeData.substring(0, messageLimit);
+        wholeData = wholeData.substring(messageLimit + 1);
+        this.emit('request', JSON.parse(message)); // We emit the request event
+        messageLimit = wholeData.indexOf('\n');
+      }
+    });
+  }
+}
+```
+
+Se ha realizado la clase `MessageEventEmitterServer`, para complementar la funcionalidad del servidor del fichero `server.ts` que se explicará posteriormente, esta clase hereda de la clase `EventEmitter` del módulo `events`.
+
+Con esta clase podremos recibir y enviar eventos, en concreto resolveremos el problema de la recepción de mensajes a trozos mediante el evento recibido `data`. La idea es que esta clase sea capaz de emitir un evento de tipo `request` con cada recepción de un mensaje completo enviado por el servidor a través del socket correspondiente. Dicha recepción se obtendrá mediante el caracter `\n`.
+
+- **Código server.ts:**
+
+```ts
+import {Notes} from './notes';
+import {ResponseType} from './types';
+import * as chalk from 'chalk';
+import * as net from 'net';
+import {Database} from './database';
+import {MessageEventEmitterServer} from './eventEmitterServer';
+
+/**
+ * Para ejecutar abra dos terminales, primeramente en una deberá introducir `node dist/server.js`, para activar el servidor,
+ * y en el otro `node dist/client.js add --user="daniel" --title="Red note" --body="This is a red note" --color="red"`, que mandará un mensaje desde el cliente al servidor.
+ * Existen otros comandos: modify, remove, list y read.
+ */
+
+// Through createServer we create a Server object, here the input of the clients will be processed
+const server = net.createServer((connection) => {
+  const emitter = new MessageEventEmitterServer(connection); // We create a MessageEventEmitterClient object
+
+  // We indicate that the connection has been established
+  console.log(chalk.blueBright('A client has connected.'));
+
+  /**
+   * With the object of the MessageEventEmitterClient class, when we receive a 'request' event,
+   * we process the response from the client. Here we do the corresponding functions and show the user the corresponding information
+   */
+  emitter.on('request', (message) => {
+    const request = message;
+    const database = new Database(); // We create an object of class fs to be able to work with the notes and the fs module
+
+    // We create an object in JSON format, of type ResponseType, said object will be processed in the write command.
+    const responseNote: ResponseType = {
+      type: 'add',
+      success: true,
+    };
+
+    switch (request.type) {
+      case 'add':
+        const add = new Notes(request.user, request.title, request.body, request.color);
+        responseNote.type = 'add';
+        if (!database.addNote(add)) responseNote.success = false;
+        break;
+
+      case 'modify':
+        const modify = new Notes(request.user, request.title, request.body, request.color);
+        responseNote.type = 'modify';
+        if (!database.modifyNote(modify)) responseNote.success = false;
+        break;
+
+      case 'remove':
+        responseNote.type = 'remove';
+        if (!database.removeNote(request.user, request.title)) responseNote.success = false;
+        break;
+
+      case 'list':
+        responseNote.type = 'list';
+        const array = database.listNotes(request.user);
+        if (array === []) responseNote.success = false;
+        else responseNote.notes = array;
+        break;
+
+      case 'read':
+        responseNote.type = 'read';
+        const note = database.readNote(request.user, request.title);
+        if (note === null) responseNote.success = false;
+        else responseNote.notes = [note];
+        break;
+
+      default:
+        console.log(chalk.red('Invalid type'));
+        break;
+    }
+    /**
+     * Once the input is processed, through write, we send the JSON previously created to the server through the client socket
+     */
+    connection.write(JSON.stringify(responseNote), (err) => {
+      if (err) console.log(chalk.red(`Request could not be made: ${err.message}`));
+      else {
+        console.log(chalk.green(`Request completed successfully`));
+        connection.end(); // We send messages
+      }
+    });
+  });
+});
+
+// It is specified that the server will be listening or observing TCP port 60300
+server.listen(60300, () => {
+  console.log(chalk.blueBright('Waiting for clients to connect.'));
+});
+```
+
+En este fichero emplearemos el módulo `net` y la clase creada previamente `MessageEventEmitterServer`. Lo que haremos será crear un objeto tipo server, aquí se procesará la entrada de los clientes. A su vez creamos un objeto para emitir eventos (emitter), a partir de ese servidor que creamos, esto es gracias a la clase creada `MessageEventEmitterServer`.
+
+Una vez realizado esto, cuando el objeto de la clase `MessageEventEmitterServer` reciba un evento `request`, procesamos el argumento del callback, el cual contiene un objeto en formato JSON, de tipo `RequestType`, dicho objeto será procesado en el comando de `write` y por las diferentes funciones de `Database`. Creamos un objeto en formato JSON, de tipo `ResponeType`, dicho objeto será procesado en el comando de `write`. Los valores de dicho ResponsetType, lo procesaremos dentro de cada switch.
+
+Ahora creamos un objeto de la clase `Database()`, y según el tipo de request que se haya lanzado (add, modify, remove...), accederemos a una parte u otra del switch, ya en dicha parte, emplearemos el objeto de `Database()` para llevar a cabo la tarea que solicitó el cliente. Los resultados de estas tareas los guardaremos en el JSON `ResponeType`.
+
+Después de haber procesado lo recibido mediante el evento `request`, mediante write, enviamos el JSON creado previamente al cliente.
+
+A su vez el servidor estará escuchando el puerto TCP 60300, debido a que por este puerto acceden los clientes.
+
+- **Test eventEmitterServer.spec.ts:**
+
+```ts
+import 'mocha';
+import {expect} from 'chai';
+import {EventEmitter} from 'events';
+import {MessageEventEmitterServer} from '../src/eventEmitterServer';
+
+describe('MessageEventEmitterServer', () => {
+  it('Should emit a request event once it gets a complete message', (done) => {
+    const emitter = new EventEmitter();
+    const server = new MessageEventEmitterServer(emitter);
+
+    server.on('request', (message) => {
+      expect(message).to.be.eql({"title": "Red note ", "body": "This is a red note overwrited", "color": "red"});
+      done();
+    });
+
+    emitter.emit('data', '{"title": "Red note ", "body": "This is a red note overwrited"');
+    emitter.emit('data', ', "color": "red"}');
+    emitter.emit('data', '\n');
+  });
+});
+```
+
+Como se puede observar, realizamos pruebas para las siguientes situaciones:
+* Enviar un mensaje por partes mediante el evento **data**.
+* Recibir correctamente dicho mensaje mediante el evento **request**
+
+Lo primero que hacemos dentro de la prueba es declarar un objeto `EventEmitter` apuntado por emitter, que utilizaremos para emular el socket por el cual el cliente envía mensajes, posiblemente, en trozos, gracias a la emisión de diferentes eventos de tipo data. Además, también definimos un objeto `MessageEventEmitterServer` apuntado por sever, cuyo constructor recibe como argumento al objeto EventEmitter apuntado por emitter.
+
+A continuación, registramos un manejador para el evento message de nuestro objeto `MessageEventEmitterClient` (emiiter). Es importante recordar que este manejador se disparará cuando dicho objeto reciba un mensaje completo a través del socket emulado.
+
+El manejador incluye una invocación a la función expect de chai, consistente en comprobar que el objeto JSON emitido junto al evento de tipo message por nuestro objeto MessageEventEmitterClient coincide realmente con lo esperado, teniendo en cuenta el mensaje enviado posiblemente a trozos, enviado a través del socket emulado. Dado que nuestro código es asíncrono, también es importante invocar al manejador o callback `done` que proporciona mocha para indicar que la prueba ha finalizado. Obsérvese que es un parámetro del manejador pasado a la función `it`.
+
+Las 3 útimas líneas, emiten tres eventos de tipo `data`. cada uno de ellos con un trozo del mensaje. Hasta que nuestro objeto MessageEventEmitterServer no reciba esos tres eventos y, además, el mensaje recibido se pueda transformar a un objeto JSON válido, no emitirá un evento de tipo `message`.
+
+
