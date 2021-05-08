@@ -897,4 +897,10 @@ El manejador incluye una invocación a la función expect de chai, consistente e
 
 Las 3 útimas líneas, emiten tres eventos de tipo `data`. cada uno de ellos con un trozo del mensaje. Hasta que nuestro objeto MessageEventEmitterServer no reciba esos tres eventos y, además, el mensaje recibido se pueda transformar a un objeto JSON válido, no emitirá un evento de tipo `message`.
 
+## 5. Conclusiones y dificultades
 
+En lo referente a la conclusión de la práctica, puedo destacar en primer lugar, el uso del módulo `net` para el uso de sockets, y el módulo `events` para emitir y recibir eventos, ya que estos se complementan muy bien a la hora de transmitir información entre cliente y servidor. Había implementado sockets en otros lenguajes, y por ello pensaba que esta práctica iba a ser más complicada que las previas, sin embargo, no encontré mayores dificultades que con respecto a otros lenguajes, por lo que no me resultó tan difícil realizar esta práctica.
+
+A su vez el poder crear nuestros propios eventos gracias a `events`, te puede permitir una gran variedad de posibilidades, en nuestro caso, la empleamos para que no sea necesario que el cliente envie un evento end para indicar que acabó de transmitir datos, ya que dicho evento end, terminaría la transmisión.
+
+Finalmente, en mi opinión, estas herramientas son muy útiles, por lo que las emplearía en mis proyectos de **TypeScript** siempre que mi proyecto sea enfocado a intercambiar cualquier flujo de datos entre distintos usuarios.
