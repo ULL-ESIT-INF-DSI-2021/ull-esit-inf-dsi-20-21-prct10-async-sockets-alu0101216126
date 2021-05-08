@@ -126,7 +126,7 @@ yargs.command( {
 /**
  * Yargs execution of the remove command. The corresponding command line options must be included
  */
-yargs.command({
+yargs.command( {
   command: 'remove',
   describe: 'Remove an existing note',
   builder: {
@@ -135,6 +135,7 @@ yargs.command({
       demandOption: true,
       type: 'string',
     },
+
     title: {
       describe: 'Notes\' title',
       demandOption: true,
@@ -143,6 +144,7 @@ yargs.command({
   },
   handler(argv) {
     // Type check
+
     if (typeof argv.user === 'string' && typeof argv.title === 'string') {
       requestNote = {
         type: 'remove',
